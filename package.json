@@ -1,0 +1,10 @@
+{
+  "name": "agendamento-barbearia",
+  "version": "1.0.0",
+  "description": "Sistema de agendamento e pagamento para barbearias",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT"
+}

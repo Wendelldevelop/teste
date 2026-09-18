@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agendamento Barbearia</title>
+<style>
+  :root {
+    --roxo-1: #6d28d9;
+    --roxo-2: #a855f7;
+    --roxo-3: #c084fc;
+    --texto: #2e1065;
+    --cinza: #6b7280;
+    --sucesso: #16a34a;
+    --erro: #dc2626;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, var(--roxo-1), var(--roxo-2), var(--roxo-3));
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .container {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 640px;
+    padding: 32px;
+  }
+
+  h1 {
+    text-align: center;
+    color: var(--texto);
+    margin-top: 0;
+    font-size: 24px;
+  }
+
+  /* Stepper */
+  .stepper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 24px 0 32px;
+  }
+
+  .step-circle-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+  }
+
+  .step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    transition: all 0.3s;
+    z-index: 2;
+  }
+
+  .step-circle-wrap.active .step-circle {
+    background: linear-gradient(135deg, var(--roxo-1), var(--roxo-2));
+    color: #fff;
+  }
+
+  .step-circle-wrap.completed .step-circle {
+    background: var(--sucesso);
+    color: #fff;
+  }
+
+  .step-label {
+    font-size: 11px;
+    color: var(--cinza);
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  .step-line {
+    position: absolute;
+    top: 18px;
+    left: -50%;
+    width: 100%;
+    height: 3px;
+    background: #e5e7eb;
+    z-index: 1;
+  }
+
+  .step-circle-wrap.completed .step-line,
+  .step-circle-wrap.active .step-line {
+    background: var(--roxo-2);
+  }
+
+  .step-circle-wrap:first-child .step-line { display: none; }
+
+  /* Steps */
+  .step { display: none; }
+  .step.active { display: block; animation: fadeIn 0.3s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .card {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .card:hover {
+    border-color: var(--roxo-3);
+  }
+
+  .card.selected {
+    border-color: var(--roxo-1);
+    background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+    box-shadow: 0 4px 12px rgba(109, 40, 217, 0.15);
+  }
+
+  .card h3 {
+    margin: 0 0 4px;
+    color: var(--texto);
+    font-size: 16px;
+  }
+
+  .card p {
+    margin: 0;
+    color: var(--cinza);
+    font-size: 13px;
+  }
+
+  .card .preco {
+    color: var(--roxo-1);
+    font-weight: bold;
+    margin-top: 6px;
+  }
+
+  form .form-group {
+    margin-bottom: 16px;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: var(--texto);
+    font-size: 14px;
+  }
+
+  input[type="text"],
+  input[type="date"],
+  input[type="time"] {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: var(--roxo-2);
+  }
+
+  .resumo {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 20px;
+  }
+
+  .resumo h4 {
+    margin: 0 0 10px;
+    color: var(--texto);
+  }
+
+  .resumo-linha {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 14px;
+    color: var(--cinza);
+  }
+
+  .resumo-linha strong {
+    color: var(--texto);
+  }
+
+  .pix-box {
+    text-align: center;
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 16px;
+  }
+
+  .qr-code {
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 12px;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    border: 8px solid #fff;
+    box-shadow: 0 0 0 2px var(--texto);
+    background: #fff;
+  }
+
+  .qr-code div { background: #fff; }
+  .qr-code div.on { background: var(--texto); }
+
+  .pix-codigo {
+    font-family: monospace;
+    font-size: 11px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px;
+    word-break: break-all;
+    color: var(--cinza);
+  }
+
+  .botoes {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 28px;
+    gap: 12px;
+  }
+
+  button {
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-voltar {
+    background: #f3f4f6;
+    color: var(--texto);
+  }
+
+  .btn-voltar:hover:not(:disabled) { background: #e5e7eb; }
+
+  .btn-proximo {
+    background: linear-gradient(135deg, var(--roxo-1), var(--roxo-2));
+    color: #fff;
+    flex: 1;
+    margin-left: 12px;
+  }
+
+  .btn-proximo:hover:not(:disabled) { opacity: 0.9; }
+
+  .mensagem {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-top: 16px;
+    font-size: 14px;
+    display: none;
+  }
+
+  .mensagem.sucesso {
+    background: #dcfce7;
+    color: var(--sucesso);
+    display: block;
+  }
+
+  .mensagem.erro {
+    background: #fee2e2;
+    color: var(--erro);
+    display: block;
+  }
+
+  .sucesso-final {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .sucesso-final .icone {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>💈 Agendar Horário</h1>
+
+    <div class="stepper" id="stepper">
+      <div class="step-circle-wrap active" data-step="1">
+        <div class="step-line"></div>
+        <div class="step-circle">1</div>
+        <div class="step-label">Barbearia</div>
+      </div>
+      <div class="step-circle-wrap" data-step="2">
+        <div class="step-line"></div>
+        <div class="step-circle">2</div>
+        <div class="step-label">Serviço</div>
+      </div>
+      <div class="step-circle-wrap" data-step="3">
+        <div class="step-line"></div>
+        <div class="step-circle">3</div>
+        <div class="step-label">Agenda</div>
+      </div>
+      <div class="step-circle-wrap" data-step="4">
+        <div class="step-line"></div>
+        <div class="step-circle">4</div>
+        <div class="step-label">Pagamento</div>
+      </div>
+    </div>
+
+    <!-- Step 1: Empresa -->
+    <div class="step active" id="step-1">
+      <div class="card-list" id="lista-empresas"></div>
+      <div class="mensagem" id="msg-1"></div>
+      <div class="botoes">
+        <span></span>
+        <button class="btn-proximo" id="btn-next-1" disabled>Próximo</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Serviço -->
+    <div class="step" id="step-2">
+      <div class="card-list" id="lista-servicos"></div>
+      <div class="mensagem" id="msg-2"></div>
+      <div class="botoes">
+        <button class="btn-voltar" id="btn-back-2">Voltar</button>
+        <button class="btn-proximo" id="btn-next-2" disabled>Próximo</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Agenda -->
+    <div class="step" id="step-3">
+      <form id="form-agenda">
+        <div class="form-group">
+          <label for="nome">Nome do cliente</label>
+          <input type="text" id="nome" placeholder="Digite seu nome">
+        </div>
+        <div class="form-group">
+          <label for="data">Data</label>
+          <input type="date" id="data">
+        </div>
+        <div class="form-group">
+          <label for="hora">Hora</label>
+          <input type="time" id="hora">
+        </div>
+      </form>
+      <div class="mensagem" id="msg-3"></div>
+      <div class="botoes">
+        <button class="btn-voltar" id="btn-back-3">Voltar</button>
+        <button class="btn-proximo" id="btn-next-3">Próximo</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Pagamento -->
+    <div class="step" id="step-4">
+      <div class="resumo" id="resumo-agendamento"></div>
+      <div class="card-list" id="lista-pagamento" style="margin-top:16px;"></div>
+      <div id="pix-area"></div>
+      <div class="mensagem" id="msg-4"></div>
+      <div class="botoes">
+        <button class="btn-voltar" id="btn-back-4">Voltar</button>
+        <button class="btn-proximo" id="btn-finalizar" disabled>Finalizar Pagamento</button>
+      </div>
+    </div>
+
+    <!-- Sucesso final -->
+    <div class="step" id="step-5">
+      <div class="sucesso-final">
+        <div class="icone">✅</div>
+        <h2>Agendamento confirmado!</h2>
+        <p id="sucesso-detalhes" style="color: var(--cinza);"></p>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const state = {
+    empresas: [],
+    servicos: [],
+    paymentMethods: [],
+    empresaId: null,
+    servicoId: null,
+    nome: '',
+    data: '',
+    hora: '',
+    formaPagamento: null,
+    agendamentoId: null,
+    preco: 0,
+  };
+
+  let currentStep = 1;
+
+  function goToStep(step) {
+    document.querySelectorAll('.step').forEach((el) => el.classList.remove('active'));
+    document.getElementById('step-' + step).classList.add('active');
+    currentStep = step;
+
+    document.querySelectorAll('.step-circle-wrap').forEach((el) => {
+      const s = Number(el.dataset.step);
+      el.classList.remove('active', 'completed');
+      if (s < step) el.classList.add('completed');
+      if (s === step) el.classList.add('active');
+    });
+  }
+
+  function showMsg(id, texto, tipo) {
+    const el = document.getElementById(id);
+    el.textContent = texto;
+    el.className = 'mensagem ' + tipo;
+  }
+
+  function clearMsg(id) {
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.className = 'mensagem';
+  }
+
+  // ---------- Step 1: Empresas ----------
+  async function carregarEmpresas() {
+    try {
+      const res = await fetch('/api/empresas');
+      state.empresas = await res.json();
+      const lista = document.getElementById('lista-empresas');
+      lista.innerHTML = '';
+      state.empresas.forEach((empresa) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<h3>${empresa.nome}</h3><p>${empresa.endereco}</p>`;
+        card.addEventListener('click', () => {
+          document.querySelectorAll('#lista-empresas .card').forEach((c) => c.classList.remove('selected'));
+          card.classList.add('selected');
+          state.empresaId = empresa.id;
+          document.getElementById('btn-next-1').disabled = false;
+        });
+        lista.appendChild(card);
+      });
+    } catch (err) {
+      showMsg('msg-1', 'Erro ao carregar barbearias', 'erro');
+    }
+  }
+
+  document.getElementById('btn-next-1').addEventListener('click', () => {
+    if (!state.empresaId) return;
+    clearMsg('msg-1');
+    carregarServicos();
+    goToStep(2);
+  });
+
+  // ---------- Step 2: Serviços ----------
+  async function carregarServicos() {
+    if (state.servicos.length) return renderServicos();
+    try {
+      const res = await fetch('/api/servicos');
+      state.servicos = await res.json();
+      renderServicos();
+    } catch (err) {
+      showMsg('msg-2', 'Erro ao carregar serviços', 'erro');
+    }
+  }
+
+  function renderServicos() {
+    const lista = document.getElementById('lista-servicos');
+    lista.innerHTML = '';
+    state.servicos.forEach((servico) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<h3>${servico.nome}</h3><p>${servico.descricao} · ${servico.duracaoMinutos} min</p><div class="preco">R$ ${servico.preco.toFixed(2)}</div>`;
+      card.addEventListener('click', () => {
+        document.querySelectorAll('#lista-servicos .card').forEach((c) => c.classList.remove('selected'));
+        card.classList.add('selected');
+        state.servicoId = servico.id;
+        state.preco = servico.preco;
+        document.getElementById('btn-next-2').disabled = false;
+      });
+      lista.appendChild(card);
+    });
+  }
+
+  document.getElementById('btn-back-2').addEventListener('click', () => goToStep(1));
+  document.getElementById('btn-next-2').addEventListener('click', () => {
+    if (!state.servicoId) return;
+    clearMsg('msg-2');
+    goToStep(3);
+  });
+
+  // ---------- Step 3: Agenda ----------
+  document.getElementById('btn-back-3').addEventListener('click', () => goToStep(2));
+  document.getElementById('btn-next-3').addEventListener('click', async () => {
+    const nome = document.getElementById('nome').value.trim();
+    const data = document.getElementById('data').value;
+    const hora = document.getElementById('hora').value;
+
+    if (!nome || !data || !hora) {
+      showMsg('msg-3', 'Preencha nome, data e hora para continuar', 'erro');
+      return;
+    }
+
+    state.nome = nome;
+    state.data = data;
+    state.hora = hora;
+
+    const btn = document.getElementById('btn-next-3');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    try {
+      const res = await fetch('/api/agendamentos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          empresaId: state.empresaId,
+          servicoId: state.servicoId,
+          nome: state.nome,
+          data: state.data,
+          hora: state.hora,
+        }),
+      });
+      const resposta = await res.json();
+
+      if (!res.ok) {
+        showMsg('msg-3', resposta.erro || 'Erro ao criar agendamento', 'erro');
+        return;
+      }
+
+      state.agendamentoId = resposta.agendamento.id;
+      clearMsg('msg-3');
+      await carregarFormasPagamento();
+      renderResumo();
+      goToStep(4);
+    } catch (err) {
+      showMsg('msg-3', 'Erro de conexão com o servidor', 'erro');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Próximo';
+    }
+  });
+
+  // ---------- Step 4: Pagamento ----------
+  async function carregarFormasPagamento() {
+    const res = await fetch(`/api/empresas/${state.empresaId}/payment-methods`);
+    state.paymentMethods = await res.json();
+
+    const lista = document.getElementById('lista-pagamento');
+    lista.innerHTML = '';
+    state.paymentMethods.forEach((forma) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<h3>${forma.nome}</h3>`;
+      card.addEventListener('click', () => {
+        document.querySelectorAll('#lista-pagamento .card').forEach((c) => c.classList.remove('selected'));
+        card.classList.add('selected');
+        state.formaPagamento = forma.id;
+        document.getElementById('btn-finalizar').disabled = false;
+        renderPixArea();
+      });
+      lista.appendChild(card);
+    });
+  }
+
+  function renderPixArea() {
+    const area = document.getElementById('pix-area');
+    if (state.formaPagamento !== 'pix') {
+      area.innerHTML = '';
+      return;
+    }
+    const squares = Array.from({ length: 100 }, () => (Math.random() > 0.55 ? 'on' : '')).join('|');
+    const squareDivs = squares.split('|').map((c) => `<div class="${c}"></div>`).join('');
+    area.innerHTML = `
+      <div class="pix-box">
+        <p><strong>Escaneie o QR Code para pagar</strong></p>
+        <div class="qr-code">${squareDivs}</div>
+        <p style="font-size:12px;color:var(--cinza);">Código Pix copia e cola:</p>
+        <div class="pix-codigo">00020126...simulado...${state.agendamentoId}5204000053039865802BR</div>
+      </div>
+    `;
+  }
+
+  function renderResumo() {
+    const empresa = state.empresas.find((e) => e.id === state.empresaId);
+    const servico = state.servicos.find((s) => s.id === state.servicoId);
+    const resumo = document.getElementById('resumo-agendamento');
+    resumo.innerHTML = `
+      <h4>Resumo do agendamento</h4>
+      <div class="resumo-linha"><span>Barbearia</span><strong>${empresa.nome}</strong></div>
+      <div class="resumo-linha"><span>Serviço</span><strong>${servico.nome}</strong></div>
+      <div class="resumo-linha"><span>Cliente</span><strong>${state.nome}</strong></div>
+      <div class="resumo-linha"><span>Data</span><strong>${state.data}</strong></div>
+      <div class="resumo-linha"><span>Hora</span><strong>${state.hora}</strong></div>
+      <div class="resumo-linha"><span>Total</span><strong>R$ ${state.preco.toFixed(2)}</strong></div>
+    `;
+  }
+
+  document.getElementById('btn-back-4').addEventListener('click', () => goToStep(3));
+  document.getElementById('btn-finalizar').addEventListener('click', async () => {
+    if (!state.formaPagamento) return;
+
+    const btn = document.getElementById('btn-finalizar');
+    btn.disabled = true;
+    btn.textContent = 'Processando...';
+
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agendamentoId: state.agendamentoId,
+          formaPagamento: state.formaPagamento,
+        }),
+      });
+      const resposta = await res.json();
+
+      if (!res.ok) {
+        showMsg('msg-4', resposta.erro || 'Erro ao processar pagamento', 'erro');
+        btn.disabled = false;
+        btn.textContent = 'Finalizar Pagamento';
+        return;
+      }
+
+      clearMsg('msg-4');
+      const empresa = state.empresas.find((e) => e.id === state.empresaId);
+      const servico = state.servicos.find((s) => s.id === state.servicoId);
+      document.getElementById('sucesso-detalhes').textContent =
+        `${servico.nome} em ${empresa.nome}, dia ${state.data} às ${state.hora}. Pagamento via ${state.formaPagamento.toUpperCase()}.`;
+      goToStep(5);
+    } catch (err) {
+      showMsg('msg-4', 'Erro de conexão com o servidor', 'erro');
+      btn.disabled = false;
+      btn.textContent = 'Finalizar Pagamento';
+    }
+  });
+
+  carregarEmpresas();
+</script>
+</body>
+</html>
